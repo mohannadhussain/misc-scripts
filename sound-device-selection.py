@@ -31,19 +31,28 @@ def setDefaultDevice(type, preferrence_list):
     result = subprocess.run([f'pacmd', f'list-{type}s'], stdout=subprocess.PIPE)
     stdout = result.stdout.decode('utf-8')
     device_list = []
+    device_index = []
+    index = 0
     for line in stdout.splitlines():
-        if line.lstrip().startswith('device.description'):
+        clean_line = line.lstrip().replace('* ','')
+        if clean_line.startswith('index: '):
+            index = clean_line.replace('index: ', '')
+        if clean_line.startswith('device.description'):
             match = re.search('"(.*)"', line)
             device_list.append(match.group(1))
+            device_index.append(int(index))
         # End if
     # End for
 
     for preferred_device in preferrence_list:
         try:
-            index = device_list.index(preferred_device)
+            ary_idx = device_list.index(preferred_device)
+            index = device_index[ary_idx]
             if index >= 0:
                 print(f'Setting {type} to {preferred_device}')
-                os.system(f'pacmd set-default-{type} {index}')
+                cmd = f'pacmd set-default-{type} {index}'
+                print(f'cmd is: {cmd}')
+                os.system(cmd)
                 break
         except:
             # Do nothing - device_list.index() probably threw a ValueError because something wasn't found
